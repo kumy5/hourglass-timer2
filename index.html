@@ -1,1 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>砂時計タイマー</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Yu Gothic", "Meiryo", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    text-align: center;
+    transition: background 0.5s;
+}
+
+.container {
+    max-width: 900px;
+    margin: 25px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+}
+
+h1 {
+    margin: 5px 0 20px;
+    font-size: 32px;
+}
+
+/* 時間ボタン */
+
+.time-buttons {
+    margin-bottom: 15px;
+}
+
+button {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin: 5px;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.time-buttons button {
+    background: #eeeeee;
+}
+
+.time-buttons button:hover {
+    background: #dddddd;
+}
+
+/* 砂時計 */
+
+.hourglass {
+    position: relative;
+    width: 260px;
+    height: 380px;
+    margin: 20px auto;
+}
+
+/* ガラス */
+
+.glass {
+    position: absolute;
+    left: 25px;
+    right: 25px;
+    top: 20px;
+    bottom: 20px;
+}
+
+/* 上下のガラス */
+
+.glass-top,
+.glass-bottom {
+    position: absolute;
+    width: 190px;
+    height: 170px;
+    left: 35px;
+    background: rgba(210, 235, 245, 0.35);
+    border: 6px solid #777;
+}
+
+/* 上側 */
+
+.glass-top {
+    top: 0;
+    clip-path: polygon(
+        0 0,
+        100% 0,
+        65% 100%,
+        35% 100%
+    );
+}
+
+/* 下側 */
+
+.glass-bottom {
+    bottom: 0;
+    clip-path: polygon(
+        35% 0,
+        65% 0,
+        100% 100%,
+        0 100%
+    );
+}
+
+/* 砂 */
+
+.sand-top {
+    position: absolute;
+    width: 130px;
+    height: 120px;
+    left: 65px;
+    top: 30px;
+    background: #d9a441;
+    clip-path: polygon(
+        0 0,
+        100% 0,
+        65% 100%,
+        35% 100%
+    );
+    transition: height 0.8s linear;
+}
+
+.sand-bottom {
+    position: absolute;
+    width: 130px;
+    height: 10px;
+    left: 65px;
+    bottom: 30px;
+    background: #d9a441;
+    clip-path: polygon(
+        35% 0,
+        65% 0,
+        100% 100%,
+        0 100%
+    );
+    transition: height 0.8s linear;
+}
+
+/* 中央のくびれ */
+
+.neck {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    left: 117px;
+    top: 177px;
+    background: #777;
+    border-radius: 50%;
+}
+
+/* 落ちている砂 */
+
+.sand-stream {
+    position: absolute;
+    width: 6px;
+    height: 100px;
+    left: 127px;
+    top: 190px;
+    background: #d9a441;
+    transform-origin: top;
+}
+
+/* タイマー */
+
+#timer {
+    font-size: 75px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    margin: 5px 0;
+}
+
+#message {
+    font-size: 28px;
+    font-weight: bold;
+    height: 45px;
+}
+
+/* 操作ボタン */
+
+.start {
+    background: #4caf50;
+    color: white;
+}
+
+.pause {
+    background: #ff9800;
+    color: white;
+}
+
+.reset {
+    background: #607d8b;
+    color: white;
+}
+
+.fullscreen {
+    background: #333;
+    color: white;
+}
+
+/* 注意 */
+
+.warning {
+    background: #fff3cd;
+}
+
+.danger {
+    background: #ffe0e0;
+}
+
+/* 終了 */
+
+.finished {
+    background: #222;
+    color: white;
+}
+
+.finished #timer {
+    color: #ff5252;
+}
+
+.finished #message {
+    color: #ff5252;
+    font-size: 40px;
+}
+
+/* 砂が落ちるアニメーション */
+
+@keyframes fallingSand {
+
+    0% {
+        transform: scaleY(0.2);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scaleY(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scaleY(0.2);
+        opacity: 0.5;
+    }
+
+}
+
+.running .sand-stream {
+    animation: fallingSand 0.8s infinite;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>⏳ 砂時計タイマー</h1>
+
+<div class="time-buttons">
+
+<button onclick="setTime(1)">1分</button>
+<button onclick="setTime(2)">2分</button>
+<button onclick="setTime(3)">3分</button>
+<button onclick="setTime(5)">5分</button>
+<button onclick="setTime(10)">10分</button>
+<button onclick="setTime(15)">15分</button>
+<button onclick="setTime(20)">20分</button>
+<button onclick="setTime(30)">30分</button>
+
+</div>
+
+
+<!-- 砂時計 -->
+
+<div class="hourglass">
+
+    <div class="glass">
+
+        <div class="glass-top"></div>
+
+        <div class="glass-bottom"></div>
+
+        <div class="sand-top" id="sandTop"></div>
+
+        <div class="sand-bottom" id="sandBottom"></div>
+
+        <div class="sand-stream"></div>
+
+        <div class="neck"></div>
+
+    </div>
+
+</div>
+
+
+<div id="timer">10:00</div>
+
+<div id="message">準備OK</div>
+
+
+<div>
+
+<button class="start" onclick="startTimer()">
+▶ スタート
+</button>
+
+<button class="pause" onclick="pauseTimer()">
+⏸ 一時停止
+</button>
+
+<button class="reset" onclick="resetTimer()">
+↻ リセット
+</button>
+
+<button class="fullscreen" onclick="fullScreen()">
+⛶ 全画面
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+let totalSeconds = 600;
+
+let remainingSeconds = 600;
+
+let timerInterval = null;
+
+let running = false;
+
+
+const timer =
+    document.getElementById("timer");
+
+const message =
+    document.getElementById("message");
+
+const sandTop =
+    document.getElementById("sandTop");
+
+const sandBottom =
+    document.getElementById("sandBottom");
+
+
+
+/* 時間設定 */
+
+function setTime(minutes) {
+
+    pauseTimer();
+
+    totalSeconds = minutes * 60;
+
+    remainingSeconds = totalSeconds;
+
+    updateDisplay();
+
+    message.textContent = "準備OK";
+
+    document.body.className = "";
+
+}
+
+
+
+/* スタート */
+
+function startTimer() {
+
+    if (running) return;
+
+    if (remainingSeconds <= 0) return;
+
+    running = true;
+
+    message.textContent = "砂が落ちています";
+
+    document.body.classList.add("running");
+
+
+    timerInterval = setInterval(function() {
+
+        if (remainingSeconds > 0) {
+
+            remainingSeconds--;
+
+            updateDisplay();
+
+        } else {
+
+            finishTimer();
+
+        }
+
+    }, 1000);
+
+}
+
+
+
+/* 一時停止 */
+
+function pauseTimer() {
+
+    clearInterval(timerInterval);
+
+    running = false;
+
+    document.body.classList.remove("running");
+
+    if (remainingSeconds > 0) {
+
+        message.textContent = "一時停止中";
+
+    }
+
+}
+
+
+
+/* リセット */
+
+function resetTimer() {
+
+    pauseTimer();
+
+    remainingSeconds = totalSeconds;
+
+    updateDisplay();
+
+    message.textContent = "準備OK";
+
+    document.body.className = "";
+
+}
+
+
+
+/* 表示更新 */
+
+function updateDisplay() {
+
+    let minutes =
+        Math.floor(remainingSeconds / 60);
+
+    let seconds =
+        remainingSeconds % 60;
+
+
+    timer.textContent =
+        String(minutes).padStart(2, "0")
+        + ":"
+        + String(seconds).padStart(2, "0");
+
+
+    /*
+        上の砂を時間に合わせて減らす
+    */
+
+    let ratio =
+        remainingSeconds / totalSeconds;
+
+
+    let topHeight =
+        Math.max(5, 120 * ratio);
+
+
+    sandTop.style.height =
+        topHeight + "px";
+
+
+    /*
+        下の砂を時間に合わせて増やす
+    */
+
+    let bottomHeight =
+        10 + (110 * (1 - ratio));
+
+
+    sandBottom.style.height =
+        bottomHeight + "px";
+
+
+    /*
+        残り1分
+    */
+
+    if (
+        remainingSeconds <= 60 &&
+        remainingSeconds > 0
+    ) {
+
+        document.body.className = "danger";
+
+        if (running) {
+            document.body.classList.add("running");
+        }
+
+        message.textContent =
+            "⚠️ あと1分！";
+
+    }
+
+
+    /*
+        残り5分
+    */
+
+    else if (
+        remainingSeconds <= 300 &&
+        remainingSeconds > 60
+    ) {
+
+        document.body.className = "warning";
+
+        if (running) {
+            document.body.classList.add("running");
+        }
+
+        message.textContent =
+            "⚠️ あと5分以内";
+
+    }
+
+}
+
+
+
+/* 終了 */
+
+function finishTimer() {
+
+    clearInterval(timerInterval);
+
+    running = false;
+
+    document.body.className = "finished";
+
+    timer.textContent = "00:00";
+
+    message.textContent =
+        "🔔 時間です！";
+
+    beep();
+
+}
+
+
+
+/* 音 */
+
+function beep() {
+
+    const audioContext =
+        new (
+            window.AudioContext ||
+            window.webkitAudioContext
+        )();
+
+    const oscillator =
+        audioContext.createOscillator();
+
+    oscillator.frequency.value = 800;
+
+    oscillator.connect(
+        audioContext.destination
+    );
+
+    oscillator.start();
+
+    setTimeout(function() {
+
+        oscillator.stop();
+
+    }, 700);
+
+}
+
+
+
+/* 全画面 */
+
+function fullScreen() {
+
+    if (!document.fullscreenElement) {
+
+        document.documentElement.requestFullscreen();
+
+    } else {
+
+        document.exitFullscreen();
+
+    }
+
+}
+
+
+
+/* 初期表示 */
+
+updateDisplay();
+
+</script>
+
+</body>
+</html>
